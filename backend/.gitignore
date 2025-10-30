@@ -3,10 +3,9 @@ __pycache__/
 *.py[codz]
 *$py.class
 
-docs/CompleteDocumentation.pdf
-LICENSE
+
 .env
-backend/venv/
+venv/
 
 
 # C extensions
