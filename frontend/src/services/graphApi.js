@@ -6,7 +6,7 @@ export const graphApiService = {
    * @returns {Promise} Graph stats with node/relationship counts
    */
   async getGraphStats() {
-    const response = await api.get('/graph/stats');
+    const response = await api.get(`/api/graph/stats`);
     return response.data;
   },
 
@@ -16,7 +16,7 @@ export const graphApiService = {
    * @returns {Promise} Timeline with all events in chronological order
    */
   async getDecisionTimeline(decision_id) {
-    const response = await api.get(`/graph/timeline/${decision_id}`);
+    const response = await api.get(`/api/graph/timeline/${decision_id}`);
     return response.data;
   },
 
@@ -26,7 +26,7 @@ export const graphApiService = {
    * @returns {Promise} Related decisions
    */
   async getRelatedDecisions(decision_id) {
-    const response = await api.get(`/graph/related/${decision_id}`);
+    const response = await api.get(`/api/graph/related/${decision_id}`);
     return response.data;
   },
 
@@ -36,7 +36,7 @@ export const graphApiService = {
    * @returns {Promise} Causality chain
    */
   async getEventCausality(event_id) {
-    const response = await api.get(`/graph/causality/${event_id}`);
+    const response = await api.get(`/api/graph/causality/${event_id}`);
     return response.data;
   },
 };
