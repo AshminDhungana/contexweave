@@ -16,17 +16,20 @@ export const apiService = {
     return response.data;
   },
 
-  // Decisions
-  async createDecision(title, description) {
+  // Decisions - CRUD Operations
+  async createDecision(title, description = null, context = null) {
     const response = await api.post('/api/decisions', {
       title,
       description,
+      context,
     });
     return response.data;
   },
 
-  async getDecisions() {
-    const response = await api.get('/api/decisions');
+  async getDecisions(skip = 0, limit = 10) {
+    const response = await api.get('/api/decisions', {
+      params: { skip, limit }
+    });
     return response.data;
   },
 
@@ -35,18 +38,37 @@ export const apiService = {
     return response.data;
   },
 
+  async updateDecision(id, data) {
+    const response = await api.put(`/api/decisions/${id}`, data);
+    return response.data;
+  },
+
+  async deleteDecision(id) {
+    const response = await api.delete(`/api/decisions/${id}`);
+    return response.data;
+  },
+
   // Events
-  async createEvent(eventType, source, data) {
+  async createEvent(event_type, source = null, description = null) {
     const response = await api.post('/api/events', {
-      event_type: eventType,
+      event_type,
       source,
-      data,
+      description,
     });
     return response.data;
   },
 
-  async getEvents() {
-    const response = await api.get('/api/events');
+  async getEvents(skip = 0, limit = 10) {
+    const response = await api.get('/api/events', {
+      params: { skip, limit }
+    });
+    return response.data;
+  },
+
+  async getRecentEvents(limit = 10) {
+    const response = await api.get('/api/events/recent', {
+      params: { limit }
+    });
     return response.data;
   },
 };

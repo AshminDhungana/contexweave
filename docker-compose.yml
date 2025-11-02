@@ -1,3 +1,5 @@
+version: '3.8'
+
 services:
   neo4j:
     image: neo4j:5.15-enterprise
@@ -12,6 +14,12 @@ services:
       - neo4j_data:/var/lib/neo4j/data
     networks:
       - contextweave-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:7474"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
 
   postgres:
     image: postgres:16-alpine
@@ -27,6 +35,12 @@ services:
       - ./init-db.sql:/docker-entrypoint-initdb.d/init.sql
     networks:
       - contextweave-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U contextweave_user -d contextweave"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
 
   redis:
     image: redis:7-alpine
@@ -38,6 +52,12 @@ services:
     networks:
       - contextweave-network
     command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
 
   zookeeper:
     image: confluentinc/cp-zookeeper:7.5.0
@@ -64,6 +84,12 @@ services:
       - zookeeper
     networks:
       - contextweave-network
+    healthcheck:
+      test: ["CMD", "kafka-broker-api-versions.sh", "--bootstrap-server", "localhost:9092"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
 
   backend:
     build: ./backend
@@ -83,9 +109,14 @@ services:
     networks:
       - contextweave-network
     depends_on:
-      - postgres
-      - redis
-      - neo4j
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      neo4j:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
 
 volumes:
   neo4j_data:
