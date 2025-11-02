@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { apiService } from '../services/api';
+import { Link } from 'react-router-dom';
 
 export default function Header() {
   const [apiHealthy, setApiHealthy] = useState(false);
@@ -24,7 +24,6 @@ export default function Header() {
     };
 
     checkHealth();
-    // Check every 5 seconds
     const interval = setInterval(checkHealth, 5000);
     return () => clearInterval(interval);
   }, []);
@@ -33,10 +32,22 @@ export default function Header() {
     <header className="bg-white border-b border-gray-200">
       <div className="max-w-7xl mx-auto px-4 py-6">
         <div className="flex justify-between items-center">
-          <div>
+          <Link to="/" className="hover:opacity-80 transition">
             <h1 className="text-3xl font-bold text-gray-900">ContextWeave</h1>
             <p className="text-gray-600 mt-1">Temporal Knowledge Graph Platform</p>
+          </Link>
+
+          {/* Navigation Links */}
+          <div className="flex gap-6 mx-8">
+            <Link to="/" className="text-gray-700 hover:text-blue-600 font-medium transition">
+              🏠 Decisions
+            </Link>
+            <Link to="/dashboard" className="text-gray-700 hover:text-blue-600 font-medium transition">
+              📊 Analytics
+            </Link>
           </div>
+
+          {/* Health Status */}
           <div>
             <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${
               apiHealthy 

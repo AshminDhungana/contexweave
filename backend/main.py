@@ -210,6 +210,124 @@ async def get_related_decisions(decision_id: int, db: Session = Depends(get_db))
         "count": 0
     }
 
+# ==================== LLM ANALYSIS ENDPOINTS ====================
+
+@app.get("/api/llm/summarize/{decision_id}")
+async def summarize_decision(decision_id: int, db: Session = Depends(get_db)):
+    """Generate AI summary of decision timeline."""
+    from core.llm_service import LLMService
+    from core.graph_service import GraphService
+    
+    decision = service.DecisionService.get_decision(db, decision_id)
+    if not decision:
+        raise HTTPException(status_code=404, detail="Decision not found")
+    
+    events = GraphService.get_decision_timeline(decision_id)
+    llm = LLMService()
+    summary = llm.summarize_decision_timeline(decision.title, events)
+    
+    return {
+        "decision_id": decision_id,
+        "decision_title": decision.title,
+        "summary": summary
+    }
+
+
+@app.get("/api/llm/analyze-risks/{decision_id}")
+async def analyze_decision_risks(decision_id: int, db: Session = Depends(get_db)):
+    """Identify risks and opportunities in decision."""
+    from core.llm_service import LLMService
+    from core.graph_service import GraphService
+    
+    decision = service.DecisionService.get_decision(db, decision_id)
+    if not decision:
+        raise HTTPException(status_code=404, detail="Decision not found")
+    
+    events = GraphService.get_decision_timeline(decision_id)
+    llm = LLMService()
+    analysis = llm.analyze_decision_risks(decision.title, events)
+    
+    return {
+        "decision_id": decision_id,
+        "decision_title": decision.title,
+        "analysis": analysis
+    }
+
+
+@app.get("/api/llm/next-steps/{decision_id}")
+async def generate_next_steps(decision_id: int, db: Session = Depends(get_db)):
+    """Generate recommended next steps."""
+    from core.llm_service import LLMService
+    from core.graph_service import GraphService
+    
+    decision = service.DecisionService.get_decision(db, decision_id)
+    if not decision:
+        raise HTTPException(status_code=404, detail="Decision not found")
+    
+    events = GraphService.get_decision_timeline(decision_id)
+    llm = LLMService()
+    steps = llm.generate_next_steps(decision.title, events)
+    
+    return {
+        "decision_id": decision_id,
+        "next_steps": steps
+    }
+
+
+@app.get("/api/llm/quality-score/{decision_id}")
+async def evaluate_decision_quality(decision_id: int, db: Session = Depends(get_db)):
+    """Score decision-making quality."""
+    from core.llm_service import LLMService
+    from core.graph_service import GraphService
+    
+    decision = service.DecisionService.get_decision(db, decision_id)
+    if not decision:
+        raise HTTPException(status_code=404, detail="Decision not found")
+    
+    events = GraphService.get_decision_timeline(decision_id)
+    llm = LLMService()
+    evaluation = llm.evaluate_decision_quality(decision.title, events)
+    
+    return {
+        "decision_id": decision_id,
+        "evaluation": evaluation
+    }
+# ==================== ANALYTICS ENDPOINTS ====================
+
+@app.get("/api/analytics/decision/{decision_id}")
+async def get_decision_metrics(decision_id: int, db: Session = Depends(get_db)):
+    """Get metrics for a specific decision."""
+    from core.analytics_service import AnalyticsService
+    metrics = AnalyticsService.get_decision_metrics(db, decision_id)
+    if not metrics:
+        raise HTTPException(status_code=404, detail="Decision not found")
+    return metrics
+
+@app.get("/api/analytics/overview")
+async def get_all_metrics(db: Session = Depends(get_db)):
+    """Get overall analytics overview."""
+    from core.analytics_service import AnalyticsService
+    return AnalyticsService.get_all_decisions_metrics(db)
+
+@app.get("/api/analytics/event-types")
+async def get_event_distribution(db: Session = Depends(get_db)):
+    """Get event type distribution."""
+    from core.analytics_service import AnalyticsService
+    return AnalyticsService.get_event_type_distribution(db)
+
+@app.get("/api/analytics/timeline")
+async def get_timeline_stats(days: int = 30, db: Session = Depends(get_db)):
+    """Get decision creation timeline."""
+    from core.analytics_service import AnalyticsService
+    return AnalyticsService.get_decision_timeline_stats(db, days)
+
+@app.get("/api/analytics/status-summary")
+async def get_status_summary(db: Session = Depends(get_db)):
+    """Get decision status summary."""
+    from core.analytics_service import AnalyticsService
+    return AnalyticsService.get_decision_status_summary(db)
+
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000, reload=True)
