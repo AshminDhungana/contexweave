@@ -99,19 +99,51 @@ export function useEvents(skip = 0, limit = 10) {
 }
 
 /**
- * Create a new event
+ * Create a new event for a decision
  */
 export function useCreateEvent() {
   const queryClient = useQueryClient()
 
   return useMutation({
     mutationFn: (data) => apiService.createEvent(
+      data.decision_id,  // ✨ NEW: Link to decision
       data.event_type,
       data.source,
       data.description
     ),
-    onSuccess: () => {
+    onSuccess: (newEvent) => {
+      // Refetch events for this decision
+      queryClient.invalidateQueries({ queryKey: ['events', newEvent.decision_id] })
+      // Also refetch all events
       queryClient.invalidateQueries({ queryKey: ['events'] })
+    },
+  })
+}
+
+/**
+ * Fetch all events for a specific decision (temporal timeline)
+ */
+export function useDecisionEvents(decision_id, skip = 0, limit = 50) {
+  return useQuery({
+    queryKey: ['decisionEvents', decision_id, skip, limit],
+    queryFn: () => apiService.getDecisionEvents(decision_id, skip, limit),
+    enabled: !!decision_id, // Only run if decision_id is provided
+  })
+}
+
+
+/**
+ * Delete an event
+ */
+export function useDeleteEvent() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (id) => apiService.deleteEvent(id),
+    onSuccess: () => {
+      // Refetch all events and decisions
+      queryClient.invalidateQueries({ queryKey: ['events'] })
+      queryClient.invalidateQueries({ queryKey: ['decisionEvents'] })
     },
   })
 }

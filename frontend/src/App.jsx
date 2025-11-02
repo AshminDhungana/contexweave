@@ -1,11 +1,13 @@
 import { useState } from 'react';
 import { useDecisions, useCreateDecision, useDeleteDecision } from './hooks/useDecisions';
 import Header from './components/Header';
+import GraphVisualization from './components/GraphVisualization';
 
 function App() {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [context, setContext] = useState('');
+  const [expandedGraphs, setExpandedGraphs] = useState(new Set());
 
   // Fetch decisions from database
   const { data: decisions = [], isLoading, error } = useDecisions();
@@ -36,6 +38,16 @@ function App() {
   // Handle delete
   const handleDelete = (id) => {
     deleteMutation.mutate(id);
+  };
+
+  const toggleGraph = (decisionId) => {
+    const newSet = new Set(expandedGraphs);
+    if (newSet.has(decisionId)) {
+      newSet.delete(decisionId);
+    } else {
+      newSet.add(decisionId);
+    }
+    setExpandedGraphs(newSet);
   };
 
   return (
@@ -123,7 +135,7 @@ function App() {
                   <div className="space-y-3">
                     {decisions.map((decision) => (
                       <div key={decision.id} className="bg-white rounded-lg shadow p-4 border border-gray-200 hover:shadow-md transition">
-                        <div className="flex justify-between items-start">
+                        <div className="flex justify-between items-start mb-3">
                           <div className="flex-1">
                             <h3 className="font-semibold text-gray-900">{decision.title}</h3>
                             {decision.description && <p className="text-gray-600 text-sm mt-1">{decision.description}</p>}
@@ -137,6 +149,23 @@ function App() {
                           >
                             Delete
                           </button>
+                        </div>
+
+                        {/* Graph Toggle Button */}
+                        <div className="border-t pt-3">
+                          <button
+                            onClick={() => toggleGraph(decision.id)}
+                            className="text-xs px-3 py-2 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 font-medium"
+                          >
+                            {expandedGraphs.has(decision.id) ? '📊 Hide Timeline' : '📊 Show Timeline'}
+                          </button>
+
+                          {/* Timeline Graph */}
+                          {expandedGraphs.has(decision.id) && (
+                            <div className="mt-3">
+                              <GraphVisualization decision_id={decision.id} />
+                            </div>
+                          )}
                         </div>
                       </div>
                     ))}

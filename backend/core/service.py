@@ -1,5 +1,6 @@
 from sqlalchemy.orm import Session
 from . import models, schemas
+from .graph_service import GraphService
 
 
 class DecisionService:
@@ -12,6 +13,7 @@ class DecisionService:
     def create_decision(db: Session, decision: schemas.DecisionCreate) -> models.Decision:
         """
         Create a new decision in the database.
+        Auto-syncs to Neo4j graph for temporal reasoning.
         
         Args:
             db: Database session
@@ -28,7 +30,12 @@ class DecisionService:
         db.add(db_decision)
         db.commit()
         db.refresh(db_decision)
+        
+        # ✨ NEW: Sync to Neo4j graph automatically
+        GraphService.sync_decision_to_graph(db, db_decision.id)
+        
         return db_decision
+
     
     
     @staticmethod
@@ -141,6 +148,7 @@ class EventService:
     def create_event(db: Session, event: schemas.EventCreate) -> models.Event:
         """
         Create a new event in the database.
+        Auto-syncs to Neo4j graph for temporal reasoning.
         
         Args:
             db: Database session
@@ -158,7 +166,13 @@ class EventService:
         db.add(db_event)
         db.commit()
         db.refresh(db_event)
+        
+        # NEW: Sync to Neo4j graph automatically
+        GraphService.sync_event_to_graph(db, db_event.id)
+        
         return db_event
+
+
     
     
     @staticmethod

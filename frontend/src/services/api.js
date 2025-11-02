@@ -49,14 +49,16 @@ export const apiService = {
   },
 
   // Events
-  async createEvent(event_type, source = null, description = null) {
+   async createEvent(decision_id, event_type, source = null, description = null) {
     const response = await api.post('/api/events', {
+      decision_id,  // ✨ NEW: Link event to decision
       event_type,
       source,
       description,
     });
     return response.data;
   },
+
 
   async getEvents(skip = 0, limit = 10) {
     const response = await api.get('/api/events', {
@@ -71,6 +73,23 @@ export const apiService = {
     });
     return response.data;
   },
+
+    // Get all events for a specific decision (temporal timeline)
+  async getDecisionEvents(decision_id, skip = 0, limit = 50) {
+    const response = await api.get(`/api/decisions/${decision_id}/events`, {
+      params: { skip, limit }
+    });
+    return response.data;
+  },
+
+
+  // Delete an event
+  async deleteEvent(id) {
+    const response = await api.delete(`/api/events/${id}`);
+    return response.data;
+  },  
 };
+
+
 
 export default api;

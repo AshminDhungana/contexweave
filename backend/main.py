@@ -156,6 +156,43 @@ async def delete_event(
     db.commit()
     return {"message": "Event deleted successfully"}
 
+# ==================== GRAPH ENDPOINTS ====================
+
+@app.get("/api/graph/timeline/{decision_id}")
+async def get_decision_timeline(decision_id: int, db: Session = Depends(get_db)):
+    """Get temporal timeline for a decision from Neo4j."""
+    from core.graph_service import GraphService
+    
+    decision = service.DecisionService.get_decision(db, decision_id)
+    if not decision:
+        raise HTTPException(status_code=404, detail="Decision not found")
+    
+    timeline = GraphService.get_decision_timeline(decision_id)
+    return {
+        "decision_id": decision_id,
+        "decision_title": decision.title,
+        "timeline": timeline,
+        "event_count": len(timeline)
+    }
+
+@app.get("/api/graph/stats")
+async def get_graph_stats():
+    """Get statistics about the knowledge graph."""
+    from core.neo4j_db import get_neo4j_driver
+    try:
+        neo4j = get_neo4j_driver()
+        decisions = neo4j.execute_query("MATCH (d:Decision) RETURN count(d) as count")
+        events = neo4j.execute_query("MATCH (e:Event) RETURN count(e) as count")
+        relationships = neo4j.execute_query("MATCH ()-[r:HAS_EVENT]->() RETURN count(r) as count")
+        
+        return {
+            "status": "healthy",
+            "decisions_in_graph": decisions[0].get("count", 0),
+            "events_in_graph": events[0].get("count", 0),
+            "relationships": relationships[0].get("count", 0)
+        }
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
 
 
 
