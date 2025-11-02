@@ -3,6 +3,8 @@ import { useDecisions, useCreateDecision, useDeleteDecision } from './hooks/useD
 import Header from './components/Header';
 import GraphVisualization from './components/GraphVisualization';
 import CreateEventForm from './components/CreateEventForm';
+import RelatedDecisions from './components/RelatedDecisions';
+
 
 function App() {
   const [title, setTitle] = useState('');
@@ -165,6 +167,7 @@ function App() {
                           {expandedGraphs.has(decision.id) && (
                             <div className="mt-3 mb-4">
                               <GraphVisualization decision_id={decision.id} />
+                              <RelatedDecisions decision_id={decision.id} />
                             </div>
                           )}
                           {/* Create Event Form */}

@@ -156,7 +156,7 @@ async def delete_event(
     db.commit()
     return {"message": "Event deleted successfully"}
 
-# ==================== GRAPH ENDPOINTS ====================
+ # ==================== GRAPH ENDPOINTS ====================
 
 @app.get("/api/graph/timeline/{decision_id}")
 async def get_decision_timeline(decision_id: int, db: Session = Depends(get_db)):
@@ -174,6 +174,7 @@ async def get_decision_timeline(decision_id: int, db: Session = Depends(get_db))
         "timeline": timeline,
         "event_count": len(timeline)
     }
+
 
 @app.get("/api/graph/stats")
 async def get_graph_stats():
@@ -195,7 +196,19 @@ async def get_graph_stats():
         return {"status": "error", "message": str(e)}
 
 
-
+@app.get("/api/graph/related-decisions/{decision_id}")
+async def get_related_decisions(decision_id: int, db: Session = Depends(get_db)):
+    """Get decisions related through the graph."""
+    decision = service.DecisionService.get_decision(db, decision_id)
+    if not decision:
+        raise HTTPException(status_code=404, detail="Decision not found")
+    
+    # TODO: Implement Neo4j related decisions query
+    return {
+        "decision_id": decision_id,
+        "related_decisions": [],
+        "count": 0
+    }
 
 if __name__ == "__main__":
     import uvicorn
