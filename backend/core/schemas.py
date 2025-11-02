@@ -50,9 +50,11 @@ class EventCreate(BaseModel):
     Schema for creating an event.
     Used when client sends POST /api/events request.
     """
+    decision_id: int  # ✨ NEW: Link event to a decision
     event_type: str
     source: Optional[str] = None
     description: Optional[str] = None
+
 
 
 class EventResponse(BaseModel):
@@ -61,6 +63,7 @@ class EventResponse(BaseModel):
     Used when server sends event data to client.
     """
     id: int
+    decision_id: int
     event_type: str
     source: Optional[str] = None
     description: Optional[str] = None

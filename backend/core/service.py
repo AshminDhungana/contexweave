@@ -150,6 +150,7 @@ class EventService:
             Created Event object
         """
         db_event = models.Event(
+            decision_id=event.decision_id,
             event_type=event.event_type,
             source=event.source,
             description=event.description
@@ -199,3 +200,28 @@ class EventService:
         return db.query(models.Event).order_by(
             models.Event.created_at.desc()
         ).limit(limit).all()
+    
+    @staticmethod
+    def get_events_by_decision(
+        db: Session, 
+        decision_id: int,
+        skip: int = 0, 
+        limit: int = 50
+    ) -> list[models.Event]:
+        """
+        Retrieve all events for a specific decision.
+        Ordered by created_at (oldest to newest).
+        
+        Args:
+            db: Database session
+            decision_id: The decision's ID
+            skip: Number of records to skip (for pagination)
+            limit: Maximum records to return
+            
+        Returns:
+            List of Event objects for this decision
+        """
+        return db.query(models.Event).filter(
+            models.Event.decision_id == decision_id
+        ).order_by(models.Event.created_at).offset(skip).limit(limit).all()
+

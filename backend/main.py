@@ -124,6 +124,42 @@ async def list_events(
     """List all events"""
     return service.EventService.get_events(db, skip, limit)
 
+
+@app.get("/api/decisions/{decision_id}/events", response_model=list[schemas.EventResponse])
+async def get_decision_events(
+    decision_id: int,
+    skip: int = 0,
+    limit: int = 50,
+    db: Session = Depends(get_db)
+):
+    """Get all events for a specific decision (temporal timeline)"""
+    # First verify decision exists
+    decision = service.DecisionService.get_decision(db, decision_id)
+    if not decision:
+        raise HTTPException(status_code=404, detail="Decision not found")
+    
+    # Return all events for this decision
+    return service.EventService.get_events_by_decision(db, decision_id, skip, limit)
+
+
+@app.delete("/api/events/{event_id}")
+async def delete_event(
+    event_id: int,
+    db: Session = Depends(get_db)
+):
+    """Delete an event"""
+    event = db.query(models.Event).filter(models.Event.id == event_id).first()
+    if not event:
+        raise HTTPException(status_code=404, detail="Event not found")
+    
+    db.delete(event)
+    db.commit()
+    return {"message": "Event deleted successfully"}
+
+
+
+
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000, reload=True)
