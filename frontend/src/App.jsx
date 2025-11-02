@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useDecisions, useCreateDecision, useDeleteDecision } from './hooks/useDecisions';
 import Header from './components/Header';
 import GraphVisualization from './components/GraphVisualization';
+import CreateEventForm from './components/CreateEventForm';
 
 function App() {
   const [title, setTitle] = useState('');
@@ -162,10 +163,12 @@ function App() {
 
                           {/* Timeline Graph */}
                           {expandedGraphs.has(decision.id) && (
-                            <div className="mt-3">
+                            <div className="mt-3 mb-4">
                               <GraphVisualization decision_id={decision.id} />
                             </div>
                           )}
+                          {/* Create Event Form */}
+                          <CreateEventForm decision_id={decision.id} />
                         </div>
                       </div>
                     ))}

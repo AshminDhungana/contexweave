@@ -1,102 +1,153 @@
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import ReactFlow, {
+  Controls,
+  Background,
+  MiniMap,
+  Panel,
+  useNodesState,
+  useEdgesState,
+} from 'reactflow';
+import 'reactflow/dist/style.css';
 import graphApiService from '../services/graphApi';
 
 export default function GraphVisualization({ decision_id }) {
-  const [timeline, setTimeline] = useState(null);
+  const [nodes, setNodes, onNodesChange] = useNodesState([]);
+  const [edges, setEdges, onEdgesChange] = useEdgesState([]);
   const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState(null);
   const [error, setError] = useState(null);
 
+  // Load graph data only once per decision_id
   useEffect(() => {
     if (!decision_id) return;
 
-    const loadTimeline = async () => {
+    const loadGraphData = async () => {
       try {
         setLoading(true);
-        const data = await graphApiService.getDecisionTimeline(decision_id);
-        setTimeline(data);
+        const timeline = await graphApiService.getDecisionTimeline(decision_id);
+        const graphStats = await graphApiService.getGraphStats();
+        setStats(graphStats);
+
+        // Build nodes and edges
+        const newNodes = [];
+        const newEdges = [];
+
+        // Decision node
+        newNodes.push({
+          id: `decision-${timeline.decision_id}`,
+          data: {
+            label: (
+              <div style={{ textAlign: 'center', padding: 8 }}>
+                <strong>{timeline.decision_title}</strong>
+              </div>
+            ),
+          },
+          position: { x: 250, y: 25 },
+          style: {
+            background: '#3b82f6',
+            color: 'white',
+            border: '2px solid #1e40af',
+            borderRadius: 8,
+            width: 220,
+          },
+        });
+
+        // Event nodes with vertical layout below decision node
+        timeline.timeline.forEach((event, idx) => {
+          newNodes.push({
+            id: `event-${event.event_id}`,
+            data: {
+              label: (
+                <div style={{ textAlign: 'center', padding: 8 }}>
+                  <div style={{ fontWeight: 'bold' }}>{event.event_type}</div>
+                  <div style={{ fontSize: 12 }}>{event.description}</div>
+                  <div style={{ fontSize: 10, color: '#718096', marginTop: 4 }}>
+                    {new Date(event.timestamp).toLocaleString()}
+                  </div>
+                </div>
+              ),
+            },
+            position: { x: 250, y: 125 + idx * 100 },
+            style: {
+              background: '#059669',
+              color: 'white',
+              border: '2px solid #047857',
+              borderRadius: 8,
+              width: 200,
+            },
+          });
+
+          // Edge from decision to event
+          newEdges.push({
+            id: `edge-decision-event-${event.event_id}`,
+            source: `decision-${timeline.decision_id}`,
+            target: `event-${event.event_id}`,
+            animated: true,
+            style: { stroke: '#3b82f6', strokeWidth: 2 },
+            markerEnd: { type: 'arrowclosed' },
+            label: 'HAS_EVENT',
+            labelStyle: { fill: '#3b82f6', fontWeight: 'bold', fontSize: 12 },
+          });
+
+          // Edge between consecutive events (temporal)
+          if (idx > 0) {
+            newEdges.push({
+              id: `edge-event-${idx - 1}-${idx}`,
+              source: `event-${timeline.timeline[idx - 1].event_id}`,
+              target: `event-${event.event_id}`,
+              animated: false,
+              style: { stroke: '#94a3b8', strokeWidth: 1.5 },
+              markerEnd: { type: 'arrowclosed' },
+            });
+          }
+        });
+
+        setNodes(newNodes);
+        setEdges(newEdges);
+        setError(null);
       } catch (err) {
-        setError(err.message);
-        console.error('Error loading timeline:', err);
+        setError('Failed to load graph data');
+        console.error(err);
       } finally {
         setLoading(false);
       }
     };
 
-    loadTimeline();
-  }, [decision_id]);
+    loadGraphData();
+  }, [decision_id]); // Only depend on decision_id
 
-  if (loading) {
+  if (loading)
     return (
-      <div className="flex items-center justify-center py-8">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
-          <p className="text-gray-600 text-sm">Loading timeline...</p>
-        </div>
+      <div style={{ height: 200, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+        Loading decision graph...
       </div>
     );
-  }
 
-  if (error) {
+  if (error)
     return (
-      <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700 text-sm">
-        Error: {error}
+      <div style={{ height: 200, color: 'red', textAlign: 'center', paddingTop: 20 }}>
+        {error}
       </div>
     );
-  }
-
-  if (!timeline || !timeline.timeline || timeline.timeline.length === 0) {
-    return (
-      <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 text-gray-600 text-sm">
-        No events in timeline
-      </div>
-    );
-  }
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200 p-4">
-      <div className="mb-4 pb-4 border-b">
-        <h4 className="font-semibold text-gray-900 text-sm">Decision: {timeline.decision_title}</h4>
-        <p className="text-xs text-gray-500 mt-1">({timeline.event_count} events)</p>
-      </div>
-
-      {/* Timeline Visualization */}
-      <div className="space-y-4">
-        {timeline.timeline.map((event, index) => (
-          <div key={event.event_id} className="flex gap-4">
-            {/* Timeline Dot and Line */}
-            <div className="flex flex-col items-center">
-              <div className="w-3 h-3 bg-blue-500 rounded-full border-2 border-blue-100"></div>
-              {index < timeline.timeline.length - 1 && (
-                <div className="w-1 h-12 bg-blue-200 mt-2"></div>
-              )}
-            </div>
-
-            {/* Event Card */}
-            <div className="flex-1 pb-2">
-              <div className="bg-blue-50 rounded-lg p-3 border border-blue-200">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <span className="inline-block px-2 py-1 bg-blue-200 text-blue-900 rounded text-xs font-semibold">
-                      {event.event_type}
-                    </span>
-                  </div>
-                </div>
-                <p className="text-gray-700 text-sm mt-2">{event.description}</p>
-                <p className="text-xs text-gray-500 mt-2">
-                  {new Date(event.timestamp).toLocaleString()}
-                </p>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Stats Footer */}
-      <div className="mt-6 pt-4 border-t text-xs text-gray-600">
-        <p>✓ Timeline generated from Neo4j graph</p>
-        <p>✓ {timeline.event_count} events in chronological order</p>
-      </div>
+    <div style={{ height: 400, border: '1px solid #ddd', borderRadius: 8 }}>
+      <ReactFlow 
+        nodes={nodes} 
+        edges={edges} 
+        onNodesChange={onNodesChange} 
+        onEdgesChange={onEdgesChange}
+        fitView
+      >
+        <Background gap={16} color="#aaa" />
+        <Controls />
+        <MiniMap nodeColor={(node) => (node.id.startsWith('decision') ? '#3b82f6' : '#059669')} />
+        <Panel position="top-left" style={{ padding: 4, backgroundColor: 'white', borderRadius: 4, border: '1px solid #ddd', fontSize: 12 }}>
+          <div>Decisions: {stats?.decisions_in_graph ?? '-'}</div>
+          <div>Events: {stats?.events_in_graph ?? '-'}</div>
+          <div>Relationships: {stats?.relationships ?? '-'}</div>
+        </Panel>
+      </ReactFlow>
     </div>
   );
 }
-
