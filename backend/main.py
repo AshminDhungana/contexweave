@@ -2,6 +2,7 @@ from fastapi import FastAPI, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from dotenv import load_dotenv
+from sqlalchemy import text
 import os
 
 from core.database import engine, Base, get_db
@@ -38,9 +39,10 @@ async def root():
 @app.get("/health")
 async def health(db: Session = Depends(get_db)):
     try:
-        db.execute("SELECT 1")
+        result = db.execute(text("SELECT 1"))
         db_status = "healthy"
-    except:
+    except Exception as e:
+        print(f"Health check failed: {e}")
         db_status = "unhealthy"
     
     return {
@@ -48,6 +50,7 @@ async def health(db: Session = Depends(get_db)):
         "version": "0.2.0",
         "database": db_status
     }
+
 
 # ==================== DECISION ENDPOINTS ====================
 
