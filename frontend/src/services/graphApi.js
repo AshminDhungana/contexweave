@@ -51,33 +51,31 @@ export const graphApiService = {
     const response = await api.get(`/api/llm/quality-score/${decision_id}`);
     return response.data;
   },
-  // Add these methods to the export:
 
-async getDecisionMetrics(decision_id) {
-  const response = await api.get(`/api/analytics/decision/${decision_id}`);
-  return response.data;
-},
+  async getDecisionMetrics(decision_id) {
+    const response = await api.get(`/api/analytics/decision/${decision_id}`);
+    return response.data;
+  },
 
-async getAnalyticsOverview() {
-  const response = await api.get('/api/analytics/overview');
-  return response.data;
-},
+  async getAnalyticsOverview() {
+    const response = await api.get('/api/analytics/overview');
+    return response.data;
+  },
 
-async getEventTypeDistribution() {
-  const response = await api.get('/api/analytics/event-types');
-  return response.data;
-},
+  async getEventTypeDistribution() {
+    const response = await api.get('/api/analytics/event-types');
+    return response.data;
+  },
 
-async getTimelineStats(days = 30) {
-  const response = await api.get('/api/analytics/timeline', { params: { days } });
-  return response.data;
-},
+  async getTimelineStats(days = 30) {
+    const response = await api.get('/api/analytics/timeline', { params: { days } });
+    return response.data;
+  },
 
-async getStatusSummary() {
-  const response = await api.get('/api/analytics/status-summary');
-  return response.data;
-},
-
+  async getStatusSummary() {
+    const response = await api.get('/api/analytics/status-summary');
+    return response.data;
+  },
 };
 
 export default graphApiService;

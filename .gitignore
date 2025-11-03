@@ -7,7 +7,7 @@ docs/CompleteDocumentation.pdf
 LICENSE
 .env
 backend/venv/
-
+docs
 
 # C extensions
 *.so
