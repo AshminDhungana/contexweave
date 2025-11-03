@@ -4,6 +4,43 @@ from datetime import datetime
 from .database import Base
 
 
+# ==================== USER MODEL ====================
+
+class User(Base):
+    """
+    Represents a user account in the system.
+    Users can create decisions and associated events.
+    """
+    __tablename__ = "users"
+    
+    # Primary Key
+    id = Column(Integer, primary_key=True, index=True)
+    
+    # User Info
+    email = Column(String(255), unique=True, nullable=False, index=True)
+    username = Column(String(255), unique=True, nullable=False, index=True)
+    
+    # Password (hashed with bcrypt)
+    password_hash = Column(String(255), nullable=False)
+    
+    # Metadata
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    is_active = Column(Boolean, default=True)
+    
+    # ✨ Relationship: One User → Many Decisions
+    decisions = relationship(
+        "Decision",
+        back_populates="user",
+        cascade="all, delete-orphan",
+        lazy="selectin"
+    )
+    
+    def __repr__(self):
+        return f"<User(id={self.id}, email='{self.email}', username='{self.username}')>"
+
+
+# ==================== DECISION MODEL ====================
+
 class Decision(Base):
     """
     Represents a decision made by the organization.
@@ -11,11 +48,20 @@ class Decision(Base):
     
     Relationships:
     - One Decision → Many Events (tracks its lifecycle)
+    - One User → Many Decisions (user created the decision)
     """
     __tablename__ = "decisions"
     
     # Primary Key
     id = Column(Integer, primary_key=True, index=True)
+    
+    # ✨ NEW: Foreign Key to User (WHO created this decision)
+    user_id = Column(
+        Integer,
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True
+    )
     
     # Core Fields
     title = Column(String(255), nullable=False, index=True)
@@ -27,9 +73,7 @@ class Decision(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     is_active = Column(Boolean, default=True)
     
-    # ✨ NEW: Relationship to Events
-    # This allows: decision.events (get all events for this decision)
-    # cascade="all, delete-orphan" = if decision deleted, all events deleted
+    # ✨ Relationships
     events = relationship(
         "Event",
         back_populates="decision",
@@ -37,27 +81,25 @@ class Decision(Base):
         lazy="selectin"
     )
     
+    user = relationship("User", back_populates="decisions")
+    
     def __repr__(self):
-        return f"<Decision(id={self.id}, title='{self.title}')>"
+        return f"<Decision(id={self.id}, title='{self.title}', user_id={self.user_id})>"
 
+
+# ==================== EVENT MODEL ====================
 
 class Event(Base):
     """
     Represents events in the system.
     Used for audit trail and triggering real-time updates.
-    
-    Each event is linked to a Decision, creating a temporal record of
-    when decisions were made, reviewed, approved, implemented, etc.
     """
     __tablename__ = "events"
     
     # Primary Key
     id = Column(Integer, primary_key=True, index=True)
     
-    # ✨ NEW: Foreign Key to Decision (THE CRITICAL LINK)
-    # This links every event to its parent decision
-    # nullable=False = every event MUST belong to a decision
-    # ForeignKey("decisions.id", ondelete="CASCADE") = if decision deleted, event deleted
+    # Foreign Keys
     decision_id = Column(
         Integer,
         ForeignKey("decisions.id", ondelete="CASCADE"),
@@ -73,9 +115,7 @@ class Event(Base):
     # Metadata
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     
-    # ✨ NEW: Relationship back to Decision
-    # This allows: event.decision (get parent decision)
-    # back_populates="events" = creates bidirectional access
+    # Relationship
     decision = relationship("Decision", back_populates="events")
     
     def __repr__(self):

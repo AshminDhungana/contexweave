@@ -1,9 +1,17 @@
-from fastapi import FastAPI, Depends, HTTPException
+from fastapi import FastAPI, Depends, HTTPException, Header
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from dotenv import load_dotenv
 from sqlalchemy import text
 import os
+
+from core.database import engine, Base, get_db
+from core.auth import (
+    UserRegister, UserLogin, Token, UserResponse,
+    hash_password, verify_password, create_access_token,
+    decode_access_token, extract_token_from_header
+)
+from core.models import User
 
 from core.database import engine, Base, get_db
 from core import models, schemas, service
@@ -326,6 +334,121 @@ async def get_status_summary(db: Session = Depends(get_db)):
     """Get decision status summary."""
     from core.analytics_service import AnalyticsService
     return AnalyticsService.get_decision_status_summary(db)
+
+
+
+# ==================== AUTHENTICATION ENDPOINTS ====================
+
+@app.post("/api/auth/signup", response_model=Token)
+def signup(user_data: UserRegister, db: Session = Depends(get_db)):
+    """
+    User signup endpoint.
+    
+    Creates a new user account with email, username, and password.
+    Returns JWT access token for immediate login.
+    """
+    # Check if email already exists
+    existing_user = db.query(User).filter(User.email == user_data.email).first()
+    if existing_user:
+        raise HTTPException(status_code=400, detail="Email already registered")
+    
+    # Check if username already exists
+    existing_user = db.query(User).filter(User.username == user_data.username).first()
+    if existing_user:
+        raise HTTPException(status_code=400, detail="Username already taken")
+    
+    # Hash password
+    password_hash = hash_password(user_data.password)
+    
+    # Create user
+    new_user = User(
+        email=user_data.email,
+        username=user_data.username,
+        password_hash=password_hash
+    )
+    db.add(new_user)
+    db.commit()
+    db.refresh(new_user)
+    
+    # Generate token
+    access_token = create_access_token(new_user.id, new_user.email)
+    
+    return {"access_token": access_token, "token_type": "bearer"}
+
+
+@app.post("/api/auth/login", response_model=Token)
+def login(user_data: UserLogin, db: Session = Depends(get_db)):
+    """
+    User login endpoint.
+    
+    Authenticates user with email and password.
+    Returns JWT access token.
+    """
+    # Find user by email
+    user = db.query(User).filter(User.email == user_data.email).first()
+    if not user:
+        raise HTTPException(status_code=401, detail="Invalid email or password")
+    
+    # Verify password
+    if not verify_password(user_data.password, user.password_hash):
+        raise HTTPException(status_code=401, detail="Invalid email or password")
+    
+    # Generate token
+    access_token = create_access_token(user.id, user.email)
+    
+    return {"access_token": access_token, "token_type": "bearer"}
+
+
+@app.get("/api/auth/me", response_model=UserResponse)
+def get_current_user(authorization: str = Header(None), db: Session = Depends(get_db)):
+    """
+    Get current user information.
+    
+    Requires: Authorization header with Bearer token
+    Returns: Current user details
+    """
+    # Extract token from header
+    token = extract_token_from_header(authorization)
+    if not token:
+        raise HTTPException(status_code=401, detail="Missing or invalid authorization header")
+    
+    # Decode token
+    token_data = decode_access_token(token)
+    if not token_data:
+        raise HTTPException(status_code=401, detail="Invalid or expired token")
+    
+    # Get user from database
+    user = db.query(User).filter(User.id == token_data.user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    return user
+
+
+# ==================== DEPENDENCY: GET CURRENT USER ====================
+
+def get_current_user_from_token(authorization: str = Header(None), db: Session = Depends(get_db)) -> User:
+    """
+    Dependency function to extract current user from JWT token.
+    
+    Use this to protect routes:
+        @app.get("/protected")
+        def protected_route(current_user: User = Depends(get_current_user_from_token)):
+            ...
+    """
+    token = extract_token_from_header(authorization)
+    if not token:
+        raise HTTPException(status_code=401, detail="Missing authorization header")
+    
+    token_data = decode_access_token(token)
+    if not token_data:
+        raise HTTPException(status_code=401, detail="Invalid or expired token")
+    
+    user = db.query(User).filter(User.id == token_data.user_id).first()
+    if not user:
+        raise HTTPException(status_code=401, detail="User not found")
+    
+    return user
 
 
 if __name__ == "__main__":
