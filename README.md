@@ -22,6 +22,9 @@ ContextWeave helps teams make better decisions by capturing **why** decisions we
 ### The Solution
 ContextWeave automatically creates a **temporal knowledge graph** from meetings, documents, decisions, and code—providing context-aware intelligence in real-time.
 
+![Dashboard Preview](./frontend/src/assets/dashboard.png)
+
+
 ---
 
 ## ✨ Key Features (Phase 13 Complete)
