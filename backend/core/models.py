@@ -39,6 +39,30 @@ class User(Base):
         return f"<User(id={self.id}, email='{self.email}', username='{self.username}')>"
 
 
+class User(Base):
+    """..."""
+    __tablename__ = "users"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    email = Column(String(255), unique=True, nullable=False, index=True)
+    username = Column(String(255), unique=True, nullable=False, index=True)
+    password_hash = Column(String(255), nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    is_active = Column(Boolean, default=True)
+    
+    # ✨ NEW: User Status & Role
+    role = Column(String(50), default="user")  # "user", "admin"
+    status = Column(String(50), default="pending")  # "pending", "approved", "rejected"
+    approved_at = Column(DateTime, nullable=True)
+    approved_by_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    
+    # Relationships
+    decisions = relationship("Decision", back_populates="user", cascade="all, delete-orphan")
+    
+    def __repr__(self):
+        return f"<User(id={self.id}, email='{self.email}', status='{self.status}', role='{self.role}')>"
+
+
 # ==================== DECISION MODEL ====================
 
 class Decision(Base):

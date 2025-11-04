@@ -1,7 +1,10 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 
 export default function Header() {
+  const navigate = useNavigate();
+  const { user, isAuthenticated, logout } = useAuth();
   const [apiHealthy, setApiHealthy] = useState(false);
   const [loading, setLoading] = useState(true);
 
@@ -28,27 +31,42 @@ export default function Header() {
     return () => clearInterval(interval);
   }, []);
 
+  const handleLogout = () => {
+    logout();
+    navigate('/');
+  };
+
   return (
-    <header className="bg-white border-b border-gray-200">
-      <div className="max-w-7xl mx-auto px-4 py-6">
+    <header className="bg-white border-b border-gray-200 shadow-sm">
+      <div className="max-w-7xl mx-auto px-4 py-4">
         <div className="flex justify-between items-center">
+          {/* Logo */}
           <Link to="/" className="hover:opacity-80 transition">
             <h1 className="text-3xl font-bold text-gray-900">ContextWeave</h1>
-            <p className="text-gray-600 mt-1">Temporal Knowledge Graph Platform</p>
+            <p className="text-gray-600 text-sm">Temporal Knowledge Graph Platform</p>
           </Link>
 
           {/* Navigation Links */}
-          <div className="flex gap-6 mx-8">
-            <Link to="/" className="text-gray-700 hover:text-blue-600 font-medium transition">
+          <div className="flex gap-8 mx-8">
+            <Link 
+              to="/" 
+              className="text-gray-700 hover:text-blue-600 font-medium transition flex items-center gap-2"
+            >
               🏠 Decisions
             </Link>
-            <Link to="/dashboard" className="text-gray-700 hover:text-blue-600 font-medium transition">
-              📊 Analytics
-            </Link>
+            {isAuthenticated && (
+              <Link 
+                to="/dashboard" 
+                className="text-gray-700 hover:text-blue-600 font-medium transition flex items-center gap-2"
+              >
+                📊 Analytics
+              </Link>
+            )}
           </div>
 
-          {/* Health Status */}
-          <div>
+          {/* Right Side: Auth Status + Health */}
+          <div className="flex items-center gap-4">
+            {/* Health Status */}
             <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${
               apiHealthy 
                 ? 'bg-green-100 text-green-800' 
@@ -56,6 +74,36 @@ export default function Header() {
             }`}>
               {loading ? '⏳ Checking...' : (apiHealthy ? '✓ API Healthy' : '✗ API Down')}
             </span>
+
+            {/* Auth Section */}
+            {isAuthenticated ? (
+              <div className="flex items-center gap-3">
+                <span className="text-sm text-gray-700">
+                  👤 <strong>{user?.username}</strong>
+                </span>
+                <button
+                  onClick={handleLogout}
+                  className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg font-medium transition"
+                >
+                  Logout
+                </button>
+              </div>
+            ) : (
+              <div className="flex gap-2">
+                <Link
+                  to="/login"
+                  className="text-gray-700 hover:text-blue-600 font-medium transition px-3 py-2"
+                >
+                  Login
+                </Link>
+                <Link
+                  to="/signup"
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition"
+                >
+                  Sign Up
+                </Link>
+              </div>
+            )}
           </div>
         </div>
       </div>

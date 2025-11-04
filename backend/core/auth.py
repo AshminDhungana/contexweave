@@ -3,6 +3,7 @@ from typing import Optional
 import bcrypt
 import jwt
 from pydantic import BaseModel
+from enum import Enum
 
 # Configuration
 SECRET_KEY = "your-secret-key-change-this-in-production"
@@ -11,6 +12,14 @@ ACCESS_TOKEN_EXPIRE_MINUTES = 60
 
 
 # ==================== SCHEMAS ====================
+class UserStatus(str, Enum):
+    PENDING = "pending"
+    APPROVED = "approved"
+    REJECTED = "rejected"
+
+class UserRole(str, Enum):
+    USER = "user"
+    ADMIN = "admin"
 
 class TokenData(BaseModel):
     """JWT Token payload"""
@@ -138,3 +147,28 @@ def extract_token_from_header(authorization: str) -> Optional[str]:
         return None
     
     return parts[1]
+
+def login(user_data: UserLogin, db: Session = Depends(get_db)):
+    """User login with status check"""
+    user = db.query(User).filter(User.email == user_data.email).first()
+    if not user:
+        raise HTTPException(status_code=401, detail="Invalid email or password")
+    
+    if not verify_password(user_data.password, user.password_hash):
+        raise HTTPException(status_code=401, detail="Invalid email or password")
+    
+    # ✨ NEW: Check approval status
+    if user.status == "pending":
+        raise HTTPException(
+            status_code=403, 
+            detail="Your account is pending admin approval"
+        )
+    
+    if user.status == "rejected":
+        raise HTTPException(
+            status_code=403, 
+            detail="Your account has been rejected"
+        )
+    
+    access_token = create_access_token(user.id, user.email)
+    return {"access_token": access_token, "token_type": "bearer"}
