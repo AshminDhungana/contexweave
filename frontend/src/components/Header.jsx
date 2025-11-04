@@ -49,18 +49,30 @@ export default function Header() {
           {/* Navigation Links */}
           <div className="flex gap-8 mx-8">
             <Link 
-              to="/" 
+              to="/decisions"
               className="text-gray-700 hover:text-blue-600 font-medium transition flex items-center gap-2"
             >
               🏠 Decisions
             </Link>
             {isAuthenticated && (
-              <Link 
-                to="/dashboard" 
-                className="text-gray-700 hover:text-blue-600 font-medium transition flex items-center gap-2"
-              >
-                📊 Analytics
-              </Link>
+              <>
+                <Link 
+                  to="/dashboard" 
+                  className="text-gray-700 hover:text-blue-600 font-medium transition flex items-center gap-2"
+                >
+                  📊 Analytics
+                </Link>
+                
+                {/*  Admin Panel Link */}
+                {user?.role === 'admin' && (
+                  <Link 
+                    to="/admin" 
+                    className="text-red-600 hover:text-red-800 font-bold transition flex items-center gap-2"
+                  >
+                    🔐 Admin Panel
+                  </Link>
+                )}
+              </>
             )}
           </div>
 
@@ -80,6 +92,12 @@ export default function Header() {
               <div className="flex items-center gap-3">
                 <span className="text-sm text-gray-700">
                   👤 <strong>{user?.username}</strong>
+                  {/* ✨ Show admin badge if admin */}
+                  {user?.role === 'admin' && (
+                    <span className="ml-2 px-2 py-1 bg-red-100 text-red-800 text-xs rounded-full font-bold">
+                      ADMIN
+                    </span>
+                  )}
                 </span>
                 <button
                   onClick={handleLogout}

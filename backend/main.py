@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 from dotenv import load_dotenv
 from sqlalchemy import text
 from datetime import datetime
+from core.schemas import DecisionCreate, DecisionUpdate, EventCreate
 import os
 
 from core.database import engine, Base, get_db

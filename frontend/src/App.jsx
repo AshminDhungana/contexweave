@@ -15,7 +15,6 @@ export default function App() {
   return (
     <Router>
       <AuthProvider>
-        {/* Header on all pages */}
         <Header />
         
         <Routes>
@@ -33,14 +32,17 @@ export default function App() {
               </ProtectedRoute>
             }
           />
-                    <Route
+
+          {/* ✨ ADMIN ONLY ROUTE */}
+          <Route
             path="/admin"
             element={
-              <ProtectedRoute>
+              <ProtectedRoute requireAdmin={true}>
                 <AdminPanel />
               </ProtectedRoute>
             }
           />
+
           <Route
             path="/decisions"
             element={

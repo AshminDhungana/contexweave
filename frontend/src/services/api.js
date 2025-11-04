@@ -9,6 +9,15 @@ const api = axios.create({
   },
 });
 
+// ✨ ADD THIS: Interceptor to include token in all requests
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('authToken');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
 export const apiService = {
   // Health check
   async getHealth() {
@@ -49,16 +58,15 @@ export const apiService = {
   },
 
   // Events
-   async createEvent(decision_id, event_type, source = null, description = null) {
+  async createEvent(decision_id, event_type, source = null, description = null) {
     const response = await api.post('/api/events', {
-      decision_id,  // ✨ NEW: Link event to decision
+      decision_id,
       event_type,
       source,
       description,
     });
     return response.data;
   },
-
 
   async getEvents(skip = 0, limit = 10) {
     const response = await api.get('/api/events', {
@@ -74,7 +82,7 @@ export const apiService = {
     return response.data;
   },
 
-    // Get all events for a specific decision (temporal timeline)
+  // Get all events for a specific decision (temporal timeline)
   async getDecisionEvents(decision_id, skip = 0, limit = 50) {
     const response = await api.get(`/api/decisions/${decision_id}/events`, {
       params: { skip, limit }
@@ -82,14 +90,11 @@ export const apiService = {
     return response.data;
   },
 
-
   // Delete an event
   async deleteEvent(id) {
     const response = await api.delete(`/api/events/${id}`);
     return response.data;
-  },  
+  },
 };
-
-
 
 export default api;

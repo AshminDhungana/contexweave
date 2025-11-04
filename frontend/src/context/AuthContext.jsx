@@ -16,7 +16,7 @@ export const AuthProvider = ({ children }) => {
     } else {
       setLoading(false);
     }
-  }, []);
+  }, [token]); // ✅ Fixed: Add token to dependencies
 
   const fetchCurrentUser = async () => {
     try {
@@ -27,7 +27,6 @@ export const AuthProvider = ({ children }) => {
       setError(null);
     } catch (err) {
       console.error('Failed to fetch user:', err);
-      // Token expired or invalid
       localStorage.removeItem('authToken');
       setToken(null);
       setUser(null);
@@ -51,8 +50,6 @@ export const AuthProvider = ({ children }) => {
       const { access_token } = response.data;
       localStorage.setItem('authToken', access_token);
       setToken(access_token);
-      
-      // Fetch user info
       await fetchCurrentUser();
       
       return true;
@@ -78,8 +75,6 @@ export const AuthProvider = ({ children }) => {
       const { access_token } = response.data;
       localStorage.setItem('authToken', access_token);
       setToken(access_token);
-      
-      // Fetch user info
       await fetchCurrentUser();
       
       return true;

@@ -3,13 +3,15 @@ from sqlalchemy.orm import relationship
 from datetime import datetime
 from .database import Base
 
-
 # ==================== USER MODEL ====================
 
 class User(Base):
     """
     Represents a user account in the system.
     Users can create decisions and associated events.
+    
+    Status: pending → approved → active
+    Role: user, admin
     """
     __tablename__ = "users"
     
@@ -19,45 +21,25 @@ class User(Base):
     # User Info
     email = Column(String(255), unique=True, nullable=False, index=True)
     username = Column(String(255), unique=True, nullable=False, index=True)
-    
-    # Password (hashed with bcrypt)
     password_hash = Column(String(255), nullable=False)
     
     # Metadata
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     is_active = Column(Boolean, default=True)
     
-    # ✨ Relationship: One User → Many Decisions
+    # ✨ NEW: User Status & Role
+    role = Column(String(50), default="user")  # "user" or "admin"
+    status = Column(String(50), default="pending")  # "pending", "approved", "rejected"
+    approved_at = Column(DateTime, nullable=True)
+    approved_by_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    
+    # Relationships
     decisions = relationship(
         "Decision",
         back_populates="user",
         cascade="all, delete-orphan",
         lazy="selectin"
     )
-    
-    def __repr__(self):
-        return f"<User(id={self.id}, email='{self.email}', username='{self.username}')>"
-
-
-class User(Base):
-    """..."""
-    __tablename__ = "users"
-    
-    id = Column(Integer, primary_key=True, index=True)
-    email = Column(String(255), unique=True, nullable=False, index=True)
-    username = Column(String(255), unique=True, nullable=False, index=True)
-    password_hash = Column(String(255), nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    is_active = Column(Boolean, default=True)
-    
-    # ✨ NEW: User Status & Role
-    role = Column(String(50), default="user")  # "user", "admin"
-    status = Column(String(50), default="pending")  # "pending", "approved", "rejected"
-    approved_at = Column(DateTime, nullable=True)
-    approved_by_id = Column(Integer, ForeignKey("users.id"), nullable=True)
-    
-    # Relationships
-    decisions = relationship("Decision", back_populates="user", cascade="all, delete-orphan")
     
     def __repr__(self):
         return f"<User(id={self.id}, email='{self.email}', status='{self.status}', role='{self.role}')>"
@@ -79,7 +61,7 @@ class Decision(Base):
     # Primary Key
     id = Column(Integer, primary_key=True, index=True)
     
-    # ✨ NEW: Foreign Key to User (WHO created this decision)
+    # Foreign Key to User (WHO created this decision)
     user_id = Column(
         Integer,
         ForeignKey("users.id", ondelete="CASCADE"),
@@ -97,7 +79,7 @@ class Decision(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     is_active = Column(Boolean, default=True)
     
-    # ✨ Relationships
+    # Relationships
     events = relationship(
         "Event",
         back_populates="decision",
@@ -123,7 +105,7 @@ class Event(Base):
     # Primary Key
     id = Column(Integer, primary_key=True, index=True)
     
-    # Foreign Keys
+    # Foreign Key
     decision_id = Column(
         Integer,
         ForeignKey("decisions.id", ondelete="CASCADE"),
