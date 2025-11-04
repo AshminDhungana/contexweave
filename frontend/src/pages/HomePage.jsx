@@ -45,7 +45,7 @@ export default function HomePage() {
         {/* Feature Preview */}
         <div className="bg-white rounded-2xl shadow-xl p-12 mb-16">
           <img
-            src="../assets/dashboard.png"
+            src="/src/assets/dashboard.png" 
             alt="Dashboard Preview"
             className="w-full rounded-lg object-cover"
           />

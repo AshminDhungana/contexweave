@@ -351,7 +351,6 @@ async def get_decision_timeline(
     current_user: User = Depends(get_current_user_from_token)
 ):
     """Get temporal timeline for a decision"""
-    from core.graph_service import GraphService
     
     decision = db.query(models.Decision).filter(
         models.Decision.id == decision_id,
@@ -360,13 +359,26 @@ async def get_decision_timeline(
     
     if not decision:
         raise HTTPException(status_code=404, detail="Decision not found")
+    events = db.query(models.Event).filter(
+        models.Event.decision_id == decision_id
+    ).all()
     
-    timeline = GraphService.get_decision_timeline(decision_id)
+    print(f"📊 Timeline query: decision_id={decision_id}, found {len(events)} events")
+    
     return {
         "decision_id": decision_id,
         "decision_title": decision.title,
-        "timeline": timeline,
-        "event_count": len(timeline)
+        "timeline": [
+            {
+                "event_id": e.id,
+                "event_type": e.event_type,
+                "description": e.description,
+                "source": e.source,
+                "timestamp": e.created_at.isoformat() if e.created_at else None
+            }
+            for e in events
+        ],
+        "event_count": len(events)
     }
 
 @app.get("/api/graph/stats")
@@ -384,15 +396,17 @@ async def get_graph_stats(
     ).all()
     decision_ids = [d[0] for d in user_decision_ids]
     
-    user_events = db.query(models.Event).filter(
-        models.Event.decision_id.in_(decision_ids) if decision_ids else False
-    ).count()
+    user_events = 0
+    if decision_ids:
+        user_events = db.query(models.Event).filter(
+            models.Event.decision_id.in_(decision_ids)
+        ).count()
     
     return {
         "status": "healthy",
-        "decisions": user_decisions,
-        "events": user_events,
-        "relationships": user_events
+        "decisions_in_graph": user_decisions,
+        "events_in_graph": user_events,
+        "relationships": user_events * 2  
     }
 
 @app.get("/api/graph/related-decisions/{decision_id}")

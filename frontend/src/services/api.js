@@ -9,7 +9,7 @@ const api = axios.create({
   },
 });
 
-// ✨ ADD THIS: Interceptor to include token in all requests
+// Interceptor to include token in all requests
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('authToken');
   if (token) {
@@ -59,12 +59,21 @@ export const apiService = {
 
   // Events
   async createEvent(decision_id, event_type, source = null, description = null) {
-    const response = await api.post('/api/events', {
-      decision_id,
+    console.log('🔥 Creating event:', {
+      decision_id: parseInt(decision_id), // ✅ Convert to number
       event_type,
       source,
       description,
     });
+
+    const response = await api.post('/api/events', {
+      decision_id: parseInt(decision_id), // ✅ Ensure it's a number
+      event_type,
+      source,
+      description,
+    });
+    
+    console.log('✅ Event created:', response.data);
     return response.data;
   },
 

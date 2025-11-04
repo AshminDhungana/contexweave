@@ -1,5 +1,9 @@
 import api from './api';
 
+/**
+ * All backend API endpoints auto-include JWT from the api.js interceptor.
+ * This ensures /graph, /llm, and /analytics endpoints always send the Authorization header.
+ */
 export const graphApiService = {
   async getGraphStats() {
     const response = await api.get('/api/graph/stats');
@@ -28,10 +32,11 @@ export const graphApiService = {
 
   async searchDecisions(query) {
     const response = await api.get('/api/graph/search', {
-      params: { query }
+      params: { query },
     });
     return response.data;
   },
+
   async getDecisionSummary(decision_id) {
     const response = await api.get(`/api/llm/summarize/${decision_id}`);
     return response.data;
@@ -68,7 +73,9 @@ export const graphApiService = {
   },
 
   async getTimelineStats(days = 30) {
-    const response = await api.get('/api/analytics/timeline', { params: { days } });
+    const response = await api.get('/api/analytics/timeline', {
+      params: { days },
+    });
     return response.data;
   },
 
